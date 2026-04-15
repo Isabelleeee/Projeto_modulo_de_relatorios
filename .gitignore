@@ -1,0 +1,17 @@
+# Dependências (A parte mais pesada)
+node_modules/
+
+# Build (Arquivos gerados automaticamente)
+dist/
+dist-ssr/
+*.local
+
+# Logs e arquivos do Sistema
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+
+# Variáveis de ambiente (Segurança)
+.env
+.env.local
