@@ -13,6 +13,13 @@ app.add_middleware(
 
 @app.get("/")
 def home():
+    // Dentro da function Home() {
+    const [file, setFile] = useState<File | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [resultado, setResultado] = useState({ sintese: '', riscos: [] });
+
+    // O 'controle remoto' para abrir a janela de arquivos do Windows
+    const fileInputRef = useRef<HTMLInputElement>(null);
     return {"status": "Servidor Mackenzie Online"}
 
 @app.post("/upload")
