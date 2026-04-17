@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { UploadCloud, FileText, CheckCircle2, ChevronRight, Activity, Sparkles, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router";
@@ -6,7 +6,11 @@ import { useNavigate } from "react-router";
 export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false); // Estado para o processamento da IA
+  const [resultado, setResultado] = useState({ sintese: '', riscos: [] }); // Dados que virão do Python
+  
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null); // Referência para abrir o popup do Windows
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -25,9 +29,33 @@ export default function Home() {
     }
   };
 
-  const handleGenerateReport = () => {
-    if (file) {
-      navigate("/relatorios/new");
+  // FUNÇÃO DA PESSOA A: Enviar para o Back-end
+  const handleGenerateReport = async () => {
+    if (!file) return;
+
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('file', file); // 'file' é a chave que o Python vai ler
+
+    try {
+      // Faz a ponte com o servidor da Pessoa B
+      const response = await fetch('http://localhost:8000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Erro na comunicação com o servidor");
+
+      const resData = await response.json();
+      
+      // Armazena o resultado da IA para exibir nos cards abaixo
+      setResultado(resData.data); 
+
+    } catch (error) {
+      console.error("Erro na integração:", error);
+      alert("Erro ao conectar no Back-end Python. Verifique se o Uvicorn está rodando!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,6 +76,15 @@ export default function Home() {
       animate="show"
       className="flex-1 w-full max-w-5xl mx-auto px-12 py-16 h-full flex flex-col gap-14 relative"
     >
+      {/* Input de arquivo invisível para abrir o popup do Windows */}
+      <input 
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept=".pdf,.md"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
+
       {/* Header Greeting */}
       <motion.header variants={itemVariant} className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
@@ -70,7 +107,7 @@ export default function Home() {
         </p>
       </motion.header>
 
-      {/* Upload Area - Deep Glass */}
+      {/* Upload Area */}
       <motion.section variants={itemVariant} className="w-full flex flex-col gap-8 relative z-10">
         <motion.div 
           onDragOver={handleDragOver}
@@ -85,20 +122,8 @@ export default function Home() {
             }
           `}
         >
-          {/* Subtle grid background inside dropzone */}
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay" />
           <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-
-          {/* Animated gradient sweep when dragging */}
-          {isDragging && (
-            <motion.div 
-              layoutId="pulse"
-              className="absolute inset-0 bg-gradient-to-tr from-cyan-500/[0.08] to-violet-500/[0.05] rounded-[2.5rem] -z-10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ repeat: Infinity, duration: 2, repeatType: "mirror" }}
-            />
-          )}
 
           <AnimatePresence mode="wait">
             {file ? (
@@ -139,13 +164,17 @@ export default function Home() {
                 <div className={`relative h-24 w-24 rounded-[2rem] flex items-center justify-center transition-all duration-700 shadow-xl border border-white/[0.05]
                   ${isDragging ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white scale-110 shadow-[0_0_40px_rgba(34,211,238,0.3)] rotate-[-5deg]' : 'bg-[#18181B] text-zinc-500 group-hover:text-cyan-400 group-hover:scale-105 group-hover:rotate-[5deg]'}
                 `}>
-                  <div className="absolute inset-0 bg-white/[0.02] rounded-[2rem]" />
                   <UploadCloud className="w-10 h-10 transition-transform duration-500 relative z-10 group-hover:-translate-y-2 group-hover:drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]" />
                 </div>
                 <div>
                   <p className="text-zinc-200 font-medium text-xl tracking-tight">Arraste a documentação aqui</p>
                   <p className="text-zinc-500 text-sm mt-2 font-light">
-                    ou <span className="text-cyan-400 font-semibold pointer-events-auto hover:text-cyan-300 transition-colors cursor-pointer border-b border-cyan-400/30 hover:border-cyan-300 pb-0.5">pesquise em seu sistema</span>
+                    ou <span 
+                      onClick={() => fileInputRef.current?.click()} 
+                      className="text-cyan-400 font-semibold cursor-pointer pointer-events-auto hover:text-cyan-300 transition-colors border-b border-cyan-400/30"
+                    >
+                      pesquise em seu sistema
+                    </span>
                   </p>
                 </div>
                 <div className="flex items-center gap-3 mt-4">
@@ -162,7 +191,7 @@ export default function Home() {
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleGenerateReport}
-            disabled={!file}
+            disabled={!file || loading}
             className={`relative overflow-hidden flex items-center gap-3 px-10 py-5 rounded-[1.5rem] font-bold text-[15px] transition-all duration-500
               ${file 
                 ? 'bg-white text-black hover:bg-zinc-200 shadow-[0_0_40px_rgba(255,255,255,0.15)] group ring-1 ring-white/50' 
@@ -176,7 +205,9 @@ export default function Home() {
               />
             )}
             <Zap className={`w-5 h-5 relative z-10 ${file ? 'text-indigo-600 group-hover:text-black transition-colors' : ''}`} />
-            <span className="relative z-10 tracking-wide">COMPILAR RELATÓRIO IA</span>
+            <span className="relative z-10 tracking-wide">
+              {loading ? "PROCESSANDO VIA IA..." : "COMPILAR RELATÓRIO IA"}
+            </span>
             <ChevronRight className={`w-5 h-5 relative z-10 transition-transform duration-300 ${file ? 'group-hover:translate-x-2' : ''}`} />
           </motion.button>
         </div>
@@ -184,6 +215,7 @@ export default function Home() {
 
       {/* Holographic Placeholder Cards */}
       <motion.section variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        {/* CARD SÍNTESE */}
         <motion.div 
           variants={itemVariant}
           whileHover={{ y: -4, backgroundColor: "rgba(255,255,255,0.03)" }}
@@ -197,27 +229,19 @@ export default function Home() {
             <h3 className="text-lg font-semibold text-white tracking-tight">Síntese Estratégica</h3>
           </div>
           <div className="space-y-5 relative z-10">
-            <motion.div 
-              initial={{ width: "0%" }} 
-              animate={{ width: "100%" }} 
-              transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-              className="h-1.5 bg-gradient-to-r from-zinc-800 to-zinc-700 rounded-full" 
-            />
-            <motion.div 
-              initial={{ width: "0%" }} 
-              animate={{ width: "83%" }} 
-              transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
-              className="h-1.5 bg-gradient-to-r from-zinc-800 to-zinc-700 rounded-full" 
-            />
-            <motion.div 
-              initial={{ width: "0%" }} 
-              animate={{ width: "66%" }} 
-              transition={{ duration: 1.5, ease: "easeOut", delay: 0.4 }}
-              className="h-1.5 bg-gradient-to-r from-zinc-800 to-zinc-700 rounded-full" 
-            />
+            {resultado.sintese ? (
+              <p className="text-zinc-300 text-sm leading-relaxed font-light">{resultado.sintese}</p>
+            ) : (
+              <>
+                <motion.div initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }} className="h-1.5 bg-gradient-to-r from-zinc-800 to-zinc-700 rounded-full" />
+                <motion.div initial={{ width: "0%" }} animate={{ width: "83%" }} transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }} className="h-1.5 bg-gradient-to-r from-zinc-800 to-zinc-700 rounded-full" />
+                <motion.div initial={{ width: "0%" }} animate={{ width: "66%" }} transition={{ duration: 1.5, ease: "easeOut", delay: 0.4 }} className="h-1.5 bg-gradient-to-r from-zinc-800 to-zinc-700 rounded-full" />
+              </>
+            )}
           </div>
         </motion.div>
 
+        {/* CARD VETOR DE RISCOS */}
         <motion.div 
           variants={itemVariant}
           whileHover={{ y: -4, backgroundColor: "rgba(255,255,255,0.03)" }}
@@ -231,43 +255,32 @@ export default function Home() {
             <h3 className="text-lg font-semibold text-white tracking-tight">Vetor de Riscos</h3>
           </div>
           <div className="space-y-6 flex flex-col justify-center h-full pb-4 relative z-10">
-            <div className="flex items-center gap-5">
-              <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)]"></div>
-              <motion.div 
-                initial={{ width: "0%" }} 
-                animate={{ width: "33%" }} 
-                transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
-                className="h-1 bg-zinc-800 rounded-full relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-rose-500/50" />
-              </motion.div>
-            </div>
-            <div className="flex items-center gap-5">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)]"></div>
-              <motion.div 
-                initial={{ width: "0%" }} 
-                animate={{ width: "50%" }} 
-                transition={{ duration: 1, ease: "easeOut", delay: 0.6 }}
-                className="h-1 bg-zinc-800 rounded-full relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-amber-400/50" />
-              </motion.div>
-            </div>
-            <div className="flex items-center gap-5">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"></div>
-              <motion.div 
-                initial={{ width: "0%" }} 
-                animate={{ width: "25%" }} 
-                transition={{ duration: 1, ease: "easeOut", delay: 0.7 }}
-                className="h-1 bg-zinc-800 rounded-full relative overflow-hidden"
-              >
-                 <div className="absolute inset-0 bg-emerald-400/50" />
-              </motion.div>
-            </div>
+            {resultado.riscos.length > 0 ? (
+              resultado.riscos.map((risco, index) => (
+                <div key={index} className="flex items-center gap-5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)]"></div>
+                  <p className="text-zinc-300 text-xs font-light tracking-wide">{risco}</p>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="flex items-center gap-5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)]"></div>
+                  <motion.div initial={{ width: "0%" }} animate={{ width: "33%" }} transition={{ duration: 1, ease: "easeOut", delay: 0.5 }} className="h-1 bg-zinc-800 rounded-full relative overflow-hidden"><div className="absolute inset-0 bg-rose-500/50" /></motion.div>
+                </div>
+                <div className="flex items-center gap-5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)]"></div>
+                  <motion.div initial={{ width: "0%" }} animate={{ width: "50%" }} transition={{ duration: 1, ease: "easeOut", delay: 0.6 }} className="h-1 bg-zinc-800 rounded-full relative overflow-hidden"><div className="absolute inset-0 bg-amber-400/50" /></motion.div>
+                </div>
+                <div className="flex items-center gap-5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"></div>
+                  <motion.div initial={{ width: "0%" }} animate={{ width: "25%" }} transition={{ duration: 1, ease: "easeOut", delay: 0.7 }} className="h-1 bg-zinc-800 rounded-full relative overflow-hidden"><div className="absolute inset-0 bg-emerald-400/50" /></motion.div>
+                </div>
+              </>
+            )}
           </div>
         </motion.div>
       </motion.section>
-
     </motion.div>
   );
 }
