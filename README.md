@@ -41,8 +41,9 @@ O projeto foi desenvolvido em regime de colaboração técnica, dividindo as fre
 
 ## ⚙️ Como Rodar o Projeto
 
-### 1. Preparação do Back-end (Python)
+### 1. Preparação (Python)
 ```bash
+### Preparação Back-end
 cd backend
 python -m pip install -r requirements.txt
 
@@ -53,7 +54,7 @@ GROQ_API_KEY=gsk_sua_chave_aqui
 ### Ligar o Servidor:
 python -m uvicorn main:app --reload 
 
-## 2. Preparação do Front-end (React)
+### Preparação do Front-end (React)
 ##Em um novo terminal:
 npm install
 npm run dev
