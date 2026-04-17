@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { UploadCloud, FileText, CheckCircle2, ChevronRight, Activity, Sparkles, Zap } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle2, ChevronRight, Activity, Sparkles, Zap, FileDown } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router";
 
@@ -8,6 +8,7 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false); // Estado para o processamento da IA
   const [resultado, setResultado] = useState({ sintese: '', riscos: [] }); // Dados que virão do Python
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null); // Referência para abrir o popup do Windows
@@ -29,7 +30,6 @@ export default function Home() {
     }
   };
 
-  // FUNÇÃO DA PESSOA A: Enviar para o Back-end
   const handleGenerateReport = async () => {
     if (!file) return;
 
@@ -39,7 +39,7 @@ export default function Home() {
 
     try {
       // Faz a ponte com o servidor da Pessoa B
-      const response = await fetch('http://localhost:8000/upload', {
+      const response = await fetch('http://127.0.0.1:8000/upload', {
         method: 'POST',
         body: formData,
       });
@@ -74,7 +74,7 @@ export default function Home() {
       variants={staggerContainer}
       initial="hidden"
       animate="show"
-      className="flex-1 w-full max-w-5xl mx-auto px-12 py-16 h-full flex flex-col gap-14 relative"
+      className="flex-1 w-full max-w-5xl mx-auto px-12 pt-16 pb-32 min-h-screen flex flex-col gap-14 relative"
     >
       {/* Input de arquivo invisível para abrir o popup do Windows */}
       <input 
@@ -280,7 +280,55 @@ export default function Home() {
             )}
           </div>
         </motion.div>
-      </motion.section>
+      </motion.section> {/* Este fecha a grid de 2 colunas */}
+
+      {/* NOVO BLOCO: MÓDULO DE EXPORTAÇÃO DE RELATÓRIOS */}
+      <AnimatePresence>
+        {resultado.sintese && (
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="mt-12 p-10 rounded-[2.5rem] bg-[#0A0A0A]/60 backdrop-blur-3xl border border-white/[0.05] shadow-2xl relative overflow-hidden group"
+          >
+            {/* Efeito de luz de fundo */}
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-indigo-500/5 to-transparent opacity-100" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="flex items-center gap-6">
+                <div className="h-16 w-16 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner">
+                  <FileDown className="w-8 h-8 text-cyan-400 animate-bounce" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white tracking-tight">Relatório Consolidado</h3>
+                  <p className="text-zinc-500 text-sm mt-1 font-light">Documentação técnica gerada via IA Neural Mackenzie</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* Botão Markdown */}
+                <button 
+                  onClick={() => window.open('http://localhost:8000/download/markdown', '_blank')}
+                  className="px-8 py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10 transition-all font-bold text-xs tracking-widest uppercase"
+                >
+                  Gerar .MD
+                </button>
+
+                {/* Botão PDF Principal */}
+                <button 
+                  onClick={() => window.open('http://localhost:8000/download/pdf', '_blank')}
+                  className="group/btn relative px-8 py-4 rounded-2xl bg-white text-black font-black text-xs tracking-widest uppercase overflow-hidden transition-transform hover:scale-105 active:scale-95"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-indigo-400 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    Exportar PDF <ChevronRight className="w-4 h-4" />
+                  </span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
