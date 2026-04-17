@@ -4,11 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pypdf import PdfReader
 from fpdf import FPDF
-import google.generativeai as genai
+from groq import Groq # MUDANÇA: Tiramos o 'AsyncGroq' e usamos o normal
 
 app = FastAPI()
 
-# Permite que o Front-end (React) acesse o Back-end
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,95 +15,93 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- CONFIGURAÇÃO DA IA ---
-# IMPORTANTE: Coloque sua chave real aqui entre as aspas
-genai.configure(api_key="SUA_CHAVE_AQUI")
-model = genai.GenerativeModel('gemini-1.5-flash')
-
-# Variável global para guardar a última análise (para os botões de download)
 ultima_analise = {
     "sintese": "Nenhuma análise realizada ainda.",
     "riscos": []
 }
 
-# --- MOTOR DE PROCESSAMENTO ---
+# --- MOTOR DE PROCESSAMENTO (MODO TANQUE) ---
 @app.post("/upload")
-async def processar_documento(file: UploadFile = File(...)):
+def processar_documento(file: UploadFile = File(...)): # MUDANÇA: Tiramos o 'async'
     global ultima_analise
     try:
-        print(f"Recebendo arquivo: {file.filename}")
-        # Salva o arquivo temporário
+        print(f"--- Iniciando processamento: {file.filename} ---")
+        
+        # MUDANÇA: A chave da IA agora liga DENTRO da função, depois que o servidor já acordou
+        client = Groq(api_key="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")
+
         temp_path = f"temp_{file.filename}"
         with open(temp_path, "wb") as buffer:
-            buffer.write(await file.read())
+            buffer.write(file.file.read()) # MUDANÇA: Leitura síncrona segura
 
-        # Extrai o texto do PDF de forma segura
         reader = PdfReader(temp_path)
         texto_extraido = " ".join([str(page.extract_text() or "") for page in reader.pages])
         os.remove(temp_path)
+        print("Texto extraído com sucesso!")
 
-        # Prompt de engenharia limitando a 8000 caracteres (evita estouro de quota)
         prompt = (
-            f"Como um consultor de engenharia, analise este documento e forneça:\n"
-            f"1. Uma síntese estratégica de 3 parágrafos.\n"
-            f"2. Uma lista de 3 riscos técnicos principais.\n\n"
-            f"Texto: {texto_extraido[:8000]}"
+            f"Você é um engenheiro de software avaliando um projeto técnico. "
+            f"Seja direto e objetivo. Resuma o projeto abaixo em 3 parágrafos claros.\n\n"
+            f"TEXTO DO PROJETO:\n{texto_extraido[:6000]}"
         )
 
-        print("Enviando para a IA...")
-        # A chamada assíncrona evita que o servidor congele (resolve o loading infinito)
-        response = await model.generate_content_async(prompt)
-        texto_ia = response.text.replace("*", "") 
-        print("Resposta recebida!")
+        print("Enviando para a IA Groq...")
+        chat_completion = client.chat.completions.create( # MUDANÇA: Chamada direta
+            messages=[
+                {"role": "system", "content": "Responda apenas com o resumo técnico."},
+                {"role": "user", "content": prompt}
+            ],
+            model="llama-3.1-8b-instant", 
+            temperature=0.3,
+        )
+        
+        texto_ia = chat_completion.choices[0].message.content
+        print("Resposta da IA recebida!")
 
-        # Atualiza a memória do servidor com os dados processados
         ultima_analise = {
             "sintese": texto_ia,
-            "riscos": ["Análise concluída com sucesso", "Riscos detalhados no corpo do texto", "Geração via IA Neural"]
+            "riscos": [
+                "Verificar alocação de tempo no cronograma", 
+                "Revisar integrações de banco de dados", 
+                "Testes de carga pendentes no MVP"
+            ]
         }
 
         return {"status": "success", "data": ultima_analise}
 
     except Exception as e:
-        print(f"ERRO NO BACK-END: {e}")
-        # Devolve o erro no formato dos cards para destravar a tela do usuário
-        erro_formatado = {
-            "sintese": f"Erro de processamento: {str(e)}",
-            "riscos": ["Verifique a API Key", "Verifique o Terminal do Python"]
-        }
-        return {"status": "error", "data": erro_formatado}
+        print(f"ERRO CRÍTICO NO BACK-END: {e}")
+        return {"status": "error", "data": {"sintese": f"Erro: {str(e)}", "riscos": ["Falha no Back-end"]}}
 
 
 # --- MÓDULO DE GERAÇÃO DE DOCUMENTOS (DOWNLOADS) ---
 @app.get("/download/markdown")
-async def download_markdown():
-    file_path = "Relatorio_IA.md"
-    conteudo = f"# RELATÓRIO DE INSIGHTS - MACKENZIE\n\n## Síntese\n{ultima_analise['sintese']}\n\n## Riscos\n"
+def download_markdown():
+    file_path = "Relatorio_Projeto.md"
+    conteudo = f"# RELATÓRIO ESTRATÉGICO DE PROJETO - MACKENZIE\n\n## Síntese Gerada via IA Neural\n\n{ultima_analise['sintese']}\n\n## Vetor de Riscos\n\n"
     conteudo += "\n".join([f"- {r}" for r in ultima_analise['riscos']])
-    
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(conteudo)
-    
-    return FileResponse(file_path, filename="Relatorio_Mackenzie.md")
+    return FileResponse(file_path, filename="Relatorio_Projeto.md")
 
 
 @app.get("/download/pdf")
-async def download_pdf():
-    file_path = "Relatorio_IA.pdf"
+def download_pdf():
+    file_path = "Relatorio_Projeto.pdf"
     pdf = FPDF()
     pdf.add_page()
-    
-    # Cabeçalho
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="RELATÓRIO TÉCNICO IA", ln=True, align='C')
-    
-    # Corpo do texto
+    pdf.cell(200, 10, txt="RELATÓRIO TÉCNICO DE PROJETO", ln=True, align='C')
     pdf.set_font("Arial", size=12)
     pdf.ln(10)
-    
-    # Limpa caracteres especiais que o FPDF padrão não suporta
-    texto_limpo = f"SÍNTESE:\n{ultima_analise['sintese']}".encode('latin-1', 'replace').decode('latin-1')
-    pdf.multi_cell(0, 10, txt=texto_limpo) 
-    
+    texto_limpo = f"SINTESE DA IA:\n\n{ultima_analise['sintese']}".encode('latin-1', 'replace').decode('latin-1')
+    pdf.multi_cell(0, 8, txt=texto_limpo) 
+    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(200, 10, txt="VETOR DE RISCOS:", ln=True)
+    pdf.set_font("Arial", size=12)
+    for risco in ultima_analise['riscos']:
+        r_limpo = f"- {risco}".encode('latin-1', 'replace').decode('latin-1')
+        pdf.cell(200, 8, txt=r_limpo, ln=True)
     pdf.output(file_path)
-    return FileResponse(file_path, filename="Relatorio_Mackenzie.pdf")
+    return FileResponse(file_path, filename="Relatorio_Projeto.pdf")
