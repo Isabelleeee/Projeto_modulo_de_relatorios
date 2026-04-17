@@ -1,10 +1,13 @@
 import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pypdf import PdfReader
 from fpdf import FPDF
 from groq import Groq # MUDANÇA: Tiramos o 'AsyncGroq' e usamos o normal
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -28,7 +31,7 @@ def processar_documento(file: UploadFile = File(...)): # MUDANÇA: Tiramos o 'as
         print(f"--- Iniciando processamento: {file.filename} ---")
         
         # MUDANÇA: A chave da IA agora liga DENTRO da função, depois que o servidor já acordou
-        client = Groq(api_key="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")
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
         temp_path = f"temp_{file.filename}"
         with open(temp_path, "wb") as buffer:
