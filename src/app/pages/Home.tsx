@@ -109,6 +109,16 @@ export default function Home() {
 
       {/* Upload Area */}
       <motion.section variants={itemVariant} className="w-full flex flex-col gap-8 relative z-10">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden" // Isso esconde o botão feio do Windows
+          accept=".pdf,.md"   // Define que só aceitamos esses formatos
+          onChange={(e) => {
+            const selectedFile = e.target.files?.[0];
+            if (selectedFile) setFile(selectedFile);
+          }}
+        />
         <motion.div 
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
