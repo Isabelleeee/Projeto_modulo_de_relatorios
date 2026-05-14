@@ -112,8 +112,8 @@ export default function Home() {
         <input
           type="file"
           ref={fileInputRef}
-          className="hidden" // Isso esconde o botão feio do Windows
-          accept=".pdf,.md"   // Define que só aceitamos esses formatos
+          className="hidden" 
+          accept=".pdf,.md"   
           onChange={(e) => {
             const selectedFile = e.target.files?.[0];
             if (selectedFile) setFile(selectedFile);
@@ -172,7 +172,7 @@ export default function Home() {
                 className="flex flex-col items-center gap-6 text-center cursor-pointer pointer-events-none relative z-10"
               >
                 <div className={`relative h-24 w-24 rounded-[2rem] flex items-center justify-center transition-all duration-700 shadow-xl border border-white/[0.05]
-                  ${isDragging ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white scale-110 shadow-[0_0_40px_rgba(34,211,238,0.3)] rotate-[-5deg]' : 'bg-[#18181B] text-zinc-500 group-hover:text-cyan-400 group-hover:scale-105 group-hover:rotate-[5deg]'}
+                  ${isDragging ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white scale-110 rotate-[-5deg]' : 'bg-[#18181B] text-zinc-500 group-hover:text-cyan-400 group-hover:scale-105 group-hover:rotate-[5deg]'}
                 `}>
                   <UploadCloud className="w-10 h-10 transition-transform duration-500 relative z-10 group-hover:-translate-y-2 group-hover:drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]" />
                 </div>
@@ -186,10 +186,6 @@ export default function Home() {
                       pesquise em seu sistema
                     </span>
                   </p>
-                </div>
-                <div className="flex items-center gap-3 mt-4">
-                  <span className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-zinc-400 text-[10px] font-mono font-bold tracking-widest shadow-inner">.PDF</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-zinc-400 text-[10px] font-mono font-bold tracking-widest shadow-inner">.MD</span>
                 </div>
               </motion.div>
             )}
@@ -231,9 +227,8 @@ export default function Home() {
           whileHover={{ y: -4, backgroundColor: "rgba(255,255,255,0.03)" }}
           className="p-8 bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/[0.05] rounded-[2rem] shadow-2xl transition-all duration-500 group relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
           <div className="flex items-center gap-4 mb-8 relative z-10">
-            <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl shadow-inner border border-indigo-500/20">
+            <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20">
               <FileText className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-semibold text-white tracking-tight">Síntese Estratégica</h3>
@@ -257,9 +252,8 @@ export default function Home() {
           whileHover={{ y: -4, backgroundColor: "rgba(255,255,255,0.03)" }}
           className="p-8 bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/[0.05] rounded-[2rem] shadow-2xl transition-all duration-500 group relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
           <div className="flex items-center gap-4 mb-8 relative z-10">
-            <div className="p-3 bg-rose-500/10 text-rose-400 rounded-2xl shadow-inner border border-rose-500/20">
+            <div className="p-3 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/20">
               <Activity className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-semibold text-white tracking-tight">Vetor de Riscos</h3>

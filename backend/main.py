@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
@@ -6,6 +7,13 @@ from fastapi.responses import FileResponse
 from pypdf import PdfReader
 from fpdf import FPDF
 from groq import Groq # MUDANÇA: Tiramos o 'AsyncGroq' e usamos o normal
+=======
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import shutil
+import os
+from dotenv import load_dotenv
+>>>>>>> 5bfdf2a (ajuste 2.0)
 
 load_dotenv()
 
@@ -13,10 +21,22 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
+<<<<<<< HEAD
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+=======
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+UPLOAD_DIR = "uploads"
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
+>>>>>>> 5bfdf2a (ajuste 2.0)
 
 ultima_analise = {
     "sintese": "Nenhuma análise realizada ainda.",
@@ -25,6 +45,7 @@ ultima_analise = {
 
 # --- MOTOR DE PROCESSAMENTO (MODO TANQUE) ---
 @app.post("/upload")
+<<<<<<< HEAD
 def processar_documento(file: UploadFile = File(...)): # MUDANÇA: Tiramos o 'async'
     global ultima_analise
     try:
@@ -108,3 +129,21 @@ def download_pdf():
         pdf.cell(200, 8, txt=r_limpo, ln=True)
     pdf.output(file_path)
     return FileResponse(file_path, filename="Relatorio_Projeto.pdf")
+=======
+async def receber_arquivo(file: UploadFile = File(...)):
+    if not (file.filename.endswith('.pdf') or file.filename.endswith('.md')):
+        raise HTTPException(status_code=400, detail="Formato inválido. Use .pdf ou .md")
+
+    try:
+        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        return {
+            "success": True,
+            "filename": file.filename,
+            "message": "Artefato pronto para análise da IA neural."
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+>>>>>>> 5bfdf2a (ajuste 2.0)
