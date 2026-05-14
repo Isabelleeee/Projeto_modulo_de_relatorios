@@ -1,7 +1,5 @@
-# Dependências (A parte mais pesada)
+# Dependências e Build (Frontend)
 node_modules/
-
-# Build (Arquivos gerados automaticamente)
 dist/
 dist-ssr/
 *.local
@@ -12,6 +10,14 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 
-# Variáveis de ambiente (Segurança)
+# Python & Backend
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
 .env
 .env.local
+.pytest_cache/
+
+# Documentos Temporários (Para não subir os PDFs de teste)
+*.pdf

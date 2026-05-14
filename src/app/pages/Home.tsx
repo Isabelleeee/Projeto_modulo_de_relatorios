@@ -6,7 +6,9 @@ import { useNavigate } from "react-router";
 export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -72,6 +74,16 @@ export default function Home() {
 
       {/* Upload Area - Deep Glass */}
       <motion.section variants={itemVariant} className="w-full flex flex-col gap-8 relative z-10">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden" // Isso esconde o botão feio do Windows
+          accept=".pdf,.md"   // Define que só aceitamos esses formatos
+          onChange={(e) => {
+            const selectedFile = e.target.files?.[0];
+            if (selectedFile) setFile(selectedFile);
+          }}
+        />
         <motion.div 
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -145,7 +157,12 @@ export default function Home() {
                 <div>
                   <p className="text-zinc-200 font-medium text-xl tracking-tight">Arraste a documentação aqui</p>
                   <p className="text-zinc-500 text-sm mt-2 font-light">
-                    ou <span className="text-cyan-400 font-semibold pointer-events-auto hover:text-cyan-300 transition-colors cursor-pointer border-b border-cyan-400/30 hover:border-cyan-300 pb-0.5">pesquise em seu sistema</span>
+                    ou <span 
+                      onClick={() => fileInputRef.current?.click()} 
+                      className="text-cyan-400 font-semibold pointer-events-auto hover:text-cyan-300 transition-colors cursor-pointer border-b border-cyan-400/30 hover:border-cyan-300 pb-0.5"
+                  >
+                      pesquise em seu sistema
+                    </span>
                   </p>
                 </div>
                 <div className="flex items-center gap-3 mt-4">
