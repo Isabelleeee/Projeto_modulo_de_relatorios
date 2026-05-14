@@ -1,149 +1,62 @@
-<<<<<<< HEAD
-import os
-from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from pypdf import PdfReader
-from fpdf import FPDF
-from groq import Groq # MUDANÇA: Tiramos o 'AsyncGroq' e usamos o normal
-=======
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import shutil
-import os
-from dotenv import load_dotenv
->>>>>>> 5bfdf2a (ajuste 2.0)
+"""
+Project Analysis API - Backend Application.
 
+FastAPI backend for document analysis using Groq AI.
+"""
+import logging
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+from config import settings
+from database import init_db
+from routes import documents, health
+
+# Load environment variables
 load_dotenv()
 
-app = FastAPI()
+# Configure logging
+logging.basicConfig(level=settings.LOG_LEVEL)
+logger = logging.getLogger(__name__)
 
+
+# Startup and shutdown events
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Manage app lifespan - startup and shutdown events.
+    """
+    # Startup
+    logger.info("Starting application...")
+    init_db()
+    logger.info("Database initialized")
+    yield
+    # Shutdown
+    logger.info("Shutting down application...")
+
+
+# Create FastAPI app
+app = FastAPI(
+    title=settings.API_TITLE,
+    description=settings.API_DESCRIPTION,
+    version=settings.API_VERSION,
+    lifespan=lifespan
+)
+
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-<<<<<<< HEAD
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-=======
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.CORS_ALLOW_METHODS,
+    allow_headers=settings.CORS_ALLOW_HEADERS,
 )
 
-UPLOAD_DIR = "uploads"
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
->>>>>>> 5bfdf2a (ajuste 2.0)
+# Include routers
+app.include_router(health.router)
+app.include_router(documents.router)
 
-ultima_analise = {
-    "sintese": "Nenhuma análise realizada ainda.",
-    "riscos": []
-}
-
-# --- MOTOR DE PROCESSAMENTO (MODO TANQUE) ---
-@app.post("/upload")
-<<<<<<< HEAD
-def processar_documento(file: UploadFile = File(...)): # MUDANÇA: Tiramos o 'async'
-    global ultima_analise
-    try:
-        print(f"--- Iniciando processamento: {file.filename} ---")
-        
-        # MUDANÇA: A chave da IA agora liga DENTRO da função, depois que o servidor já acordou
-        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-        temp_path = f"temp_{file.filename}"
-        with open(temp_path, "wb") as buffer:
-            buffer.write(file.file.read()) # MUDANÇA: Leitura síncrona segura
-
-        reader = PdfReader(temp_path)
-        texto_extraido = " ".join([str(page.extract_text() or "") for page in reader.pages])
-        os.remove(temp_path)
-        print("Texto extraído com sucesso!")
-
-        prompt = (
-            f"Você é um engenheiro de software avaliando um projeto técnico. "
-            f"Seja direto e objetivo. Resuma o projeto abaixo em 3 parágrafos claros.\n\n"
-            f"TEXTO DO PROJETO:\n{texto_extraido[:6000]}"
-        )
-
-        print("Enviando para a IA Groq...")
-        chat_completion = client.chat.completions.create( # MUDANÇA: Chamada direta
-            messages=[
-                {"role": "system", "content": "Responda apenas com o resumo técnico."},
-                {"role": "user", "content": prompt}
-            ],
-            model="llama-3.1-8b-instant", 
-            temperature=0.3,
-        )
-        
-        texto_ia = chat_completion.choices[0].message.content
-        print("Resposta da IA recebida!")
-
-        ultima_analise = {
-            "sintese": texto_ia,
-            "riscos": [
-                "Verificar alocação de tempo no cronograma", 
-                "Revisar integrações de banco de dados", 
-                "Testes de carga pendentes no MVP"
-            ]
-        }
-
-        return {"status": "success", "data": ultima_analise}
-
-    except Exception as e:
-        print(f"ERRO CRÍTICO NO BACK-END: {e}")
-        return {"status": "error", "data": {"sintese": f"Erro: {str(e)}", "riscos": ["Falha no Back-end"]}}
+logger.info(f"Application initialized - API v{settings.API_VERSION}")
 
 
-# --- MÓDULO DE GERAÇÃO DE DOCUMENTOS (DOWNLOADS) ---
-@app.get("/download/markdown")
-def download_markdown():
-    file_path = "Relatorio_Projeto.md"
-    conteudo = f"# RELATÓRIO ESTRATÉGICO DE PROJETO - MACKENZIE\n\n## Síntese Gerada via IA Neural\n\n{ultima_analise['sintese']}\n\n## Vetor de Riscos\n\n"
-    conteudo += "\n".join([f"- {r}" for r in ultima_analise['riscos']])
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(conteudo)
-    return FileResponse(file_path, filename="Relatorio_Projeto.md")
-
-
-@app.get("/download/pdf")
-def download_pdf():
-    file_path = "Relatorio_Projeto.pdf"
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="RELATÓRIO TÉCNICO DE PROJETO", ln=True, align='C')
-    pdf.set_font("Arial", size=12)
-    pdf.ln(10)
-    texto_limpo = f"SINTESE DA IA:\n\n{ultima_analise['sintese']}".encode('latin-1', 'replace').decode('latin-1')
-    pdf.multi_cell(0, 8, txt=texto_limpo) 
-    pdf.ln(10)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(200, 10, txt="VETOR DE RISCOS:", ln=True)
-    pdf.set_font("Arial", size=12)
-    for risco in ultima_analise['riscos']:
-        r_limpo = f"- {risco}".encode('latin-1', 'replace').decode('latin-1')
-        pdf.cell(200, 8, txt=r_limpo, ln=True)
-    pdf.output(file_path)
-    return FileResponse(file_path, filename="Relatorio_Projeto.pdf")
-=======
-async def receber_arquivo(file: UploadFile = File(...)):
-    if not (file.filename.endswith('.pdf') or file.filename.endswith('.md')):
-        raise HTTPException(status_code=400, detail="Formato inválido. Use .pdf ou .md")
-
-    try:
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        return {
-            "success": True,
-            "filename": file.filename,
-            "message": "Artefato pronto para análise da IA neural."
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
->>>>>>> 5bfdf2a (ajuste 2.0)
