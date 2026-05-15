@@ -53,15 +53,29 @@ GROQ_API_KEY=gsk_sua_chave_aqui
 
 ### Ligar o Servidor:
 python -m uvicorn main:app --reload 
+```
 
-### Preparação do Front-end (React)
-##Em um novo terminal:
+### 2. Preparação do Front-end (React)
+Em um novo terminal:
+```bash
 npm install
 npm run dev
+```
+
+### 3. Deploy Local com Docker
+```bash
+docker compose up --build
+```
+
+### 4. Azure
+Para deploy em Azure, use o workflow localizado em `.github/workflows/main_projetoengsoftmodulorelatorios.yml` e consulte `AZURE_DEPLOYMENT.md`.
+
+#### Secrets do GitHub necessários
+- `AZURE_CREDENTIALS`: JSON do service principal Azure
+- `AZURE_WEBAPP_NAME`: nome do App Service no Azure
+- `GROQ_API_KEY`: chave de API Groq
 
 📝 Funcionalidades
-Análise Instantânea: Extração de insights técnicos de arquivos PDF.
-
-Vetor de Riscos: Identificação automática de pontos de atenção no projeto.
-
-Exportação Profissional: Geração de relatórios formatados em PDF e Markdown.
+- Análise Instantânea: Extração de insights técnicos de arquivos PDF.
+- Vetor de Riscos: Identificação automática de pontos de atenção no projeto.
+- Exportação Profissional: Geração de relatórios formatados em PDF e Markdown.
