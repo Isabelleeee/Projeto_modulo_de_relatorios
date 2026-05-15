@@ -1,17 +1,20 @@
 import { useState, useRef } from "react";
-import { UploadCloud, FileText, CheckCircle2, ChevronRight, Activity, Sparkles, Zap, FileDown } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle2, ChevronRight, Activity, Sparkles, Zap, FileDown, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useNavigate } from "react-router";
+import { useUploadAndAnalyze } from "../../hooks/use-api";
+import { documentService } from "../../services/document-service";
+import type { AnalysisResponse } from "../../types/api";
 
 export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false); // Estado para o processamento da IA
-  const [resultado, setResultado] = useState({ sintese: '', riscos: [] }); // Dados que virão do Python
-  const [reportUrl, setReportUrl] = useState<string | null>(null);
-  
-  const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null); // Referência para abrir o popup do Windows
+  const [currentFileId, setCurrentFileId] = useState<number | null>(null);
+  const [resultado, setResultado] = useState<AnalysisResponse | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use the new API hook
+  const { uploadAndAnalyze, loading, error } = useUploadAndAnalyze();
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -33,29 +36,37 @@ export default function Home() {
   const handleGenerateReport = async () => {
     if (!file) return;
 
-    setLoading(true);
-    const formData = new FormData();
-    formData.append('file', file); // 'file' é a chave que o Python vai ler
+    try {
+      const result = await uploadAndAnalyze(file);
+      setResultado(result.analysis);
+      if (result.upload?.file_id) {
+        setCurrentFileId(result.upload.file_id);
+      }
+    } catch (err) {
+      // Error is already handled by the hook
+      console.error("Analysis failed:", err);
+    }
+  };
+
+  const handleDownload = async (format: 'markdown' | 'pdf') => {
+    if (!currentFileId) {
+      alert('Gere o relatório antes de baixar o arquivo.');
+      return;
+    }
 
     try {
-      // Faz a ponte com o servidor da Pessoa B
-      const response = await fetch('http://127.0.0.1:8000/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error("Erro na comunicação com o servidor");
-
-      const resData = await response.json();
-      
-      // Armazena o resultado da IA para exibir nos cards abaixo
-      setResultado(resData.data); 
-
+      const { blob, filename } = await documentService.downloadReport(currentFileId, format);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
-      console.error("Erro na integração:", error);
-      alert("Erro ao conectar no Back-end Python. Verifique se o Uvicorn está rodando!");
-    } finally {
-      setLoading(false);
+      console.error(`Error downloading ${format}:`, error);
+      alert(`Erro ao baixar arquivo ${format.toUpperCase()}`);
     }
   };
 
@@ -109,16 +120,6 @@ export default function Home() {
 
       {/* Upload Area */}
       <motion.section variants={itemVariant} className="w-full flex flex-col gap-8 relative z-10">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden" 
-          accept=".pdf,.md"   
-          onChange={(e) => {
-            const selectedFile = e.target.files?.[0];
-            if (selectedFile) setFile(selectedFile);
-          }}
-        />
         <motion.div 
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -219,6 +220,18 @@ export default function Home() {
         </div>
       </motion.section>
 
+      {/* Error Display */}
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3"
+        >
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <p className="text-red-300 text-sm">{error}</p>
+        </motion.div>
+      )}
+
       {/* Holographic Placeholder Cards */}
       <motion.section variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
         {/* CARD SÍNTESE */}
@@ -234,8 +247,8 @@ export default function Home() {
             <h3 className="text-lg font-semibold text-white tracking-tight">Síntese Estratégica</h3>
           </div>
           <div className="space-y-5 relative z-10">
-            {resultado.sintese ? (
-              <p className="text-zinc-300 text-sm leading-relaxed font-light">{resultado.sintese}</p>
+            {resultado?.summary ? (
+              <p className="text-zinc-300 text-sm leading-relaxed font-light">{resultado.summary}</p>
             ) : (
               <>
                 <motion.div initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }} className="h-1.5 bg-gradient-to-r from-zinc-800 to-zinc-700 rounded-full" />
@@ -259,11 +272,15 @@ export default function Home() {
             <h3 className="text-lg font-semibold text-white tracking-tight">Vetor de Riscos</h3>
           </div>
           <div className="space-y-6 flex flex-col justify-center h-full pb-4 relative z-10">
-            {resultado.riscos.length > 0 ? (
-              resultado.riscos.map((risco, index) => (
-                <div key={index} className="flex items-center gap-5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)]"></div>
-                  <p className="text-zinc-300 text-xs font-light tracking-wide">{risco}</p>
+            {resultado?.risks && resultado.risks.length > 0 ? (
+              resultado.risks.map((risco, index) => (
+                <div key={risco.id || index} className="flex items-center gap-5">
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_12px_rgba(244,63,94,0.8)] ${
+                    risco.severity === 'high' ? 'bg-red-500' :
+                    risco.severity === 'medium' ? 'bg-yellow-500' :
+                    risco.severity === 'low' ? 'bg-green-500' : 'bg-rose-500'
+                  }`}></div>
+                  <p className="text-zinc-300 text-xs font-light tracking-wide">{risco.description}</p>
                 </div>
               ))
             ) : (
@@ -288,7 +305,7 @@ export default function Home() {
 
       {/* NOVO BLOCO: MÓDULO DE EXPORTAÇÃO DE RELATÓRIOS */}
       <AnimatePresence>
-        {resultado.sintese && (
+        {resultado?.summary && (
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -312,15 +329,21 @@ export default function Home() {
               <div className="flex items-center gap-4">
                 {/* Botão Markdown */}
                 <button 
-                  onClick={() => window.open('http://localhost:8000/download/markdown', '_blank')}
+                  onClick={() => handleDownload('markdown')}
                   className="px-8 py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10 transition-all font-bold text-xs tracking-widest uppercase"
                 >
                   Gerar .MD
                 </button>
 
-                {/* Botão PDF Principal */}
                 <button 
-                  onClick={() => window.open('http://localhost:8000/download/pdf', '_blank')}
+                  onClick={() => handleDownload('docx')}
+                  className="px-8 py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10 transition-all font-bold text-xs tracking-widest uppercase"
+                >
+                  Exportar .DOCX
+                </button>
+
+                <button 
+                  onClick={() => handleDownload('pdf')}
                   className="group/btn relative px-8 py-4 rounded-2xl bg-white text-black font-black text-xs tracking-widest uppercase overflow-hidden transition-transform hover:scale-105 active:scale-95"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-indigo-400 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />

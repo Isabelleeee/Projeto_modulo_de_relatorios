@@ -20,6 +20,29 @@ class DocumentService:
     """
     
     @staticmethod
+    def generate_unique_filename(filename: str) -> str:
+        """
+        Ensure uploaded filenames do not collide by appending a counter when needed.
+        """
+        filename = os.path.basename(filename)
+        base, ext = os.path.splitext(filename)
+        safe_base = "".join(
+            ch if ch.isalnum() or ch in {" ", "-", "_"} else "_"
+            for ch in base
+        ).strip() or "upload"
+
+        candidate = f"{safe_base}{ext}"
+        output_path = os.path.join(settings.UPLOAD_DIR, candidate)
+        counter = 1
+
+        while os.path.exists(output_path):
+            candidate = f"{safe_base}_{counter}{ext}"
+            output_path = os.path.join(settings.UPLOAD_DIR, candidate)
+            counter += 1
+
+        return candidate
+
+    @staticmethod
     async def save_uploaded_file(file: UploadFile) -> Tuple[str, str, int]:
         """
         Save uploaded file to disk.
@@ -36,6 +59,7 @@ class DocumentService:
         try:
             # Validate file format
             filename, file_type = validate_file_upload(file)
+            filename = DocumentService.generate_unique_filename(filename)
             
             # Read file content
             content = await file.read()

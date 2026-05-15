@@ -12,7 +12,7 @@ services:
       - ./src:/app/src
       - ./public:/app/public
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://backend:8000
     command: npm run dev
 
   backend:

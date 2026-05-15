@@ -2,9 +2,12 @@
 Document endpoints for uploading and managing files.
 """
 import logging
-import time
+import os
+from datetime import datetime
 from typing import Optional, List
-from fastapi import APIRouter, UploadFile, File, Depends, Query
+from fastapi import APIRouter, UploadFile, File, Depends, Query, HTTPException
+from fastapi.background import BackgroundTask
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database import get_db
 from models import DocumentFile, DocumentAnalysis, AnalysisRisk
@@ -15,7 +18,7 @@ from schemas import (
     DocumentWithAnalysisResponse,
     AnalysisListResponse,
 )
-from services import DocumentService, get_groq_service
+from services import DocumentService, get_groq_service, ReportService
 from utils import DocumentNotFoundError, AnalysisNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -95,14 +98,14 @@ async def analyze_document(
         groq_service = get_groq_service()
         
         # Analyze with AI
-        start_time = time.time()
+        start_time = datetime.utcnow()
         summary, risks, duration = groq_service.analyze_project_document(text)
         
         # Store analysis in database
         analysis = DocumentAnalysis(
             document_id=file_id,
             summary=summary,
-            analyzed_at=time.time(),
+            analyzed_at=datetime.utcnow(),
             analysis_duration=duration,
             status="completed"
         )
@@ -144,6 +147,46 @@ async def analyze_document(
         logger.error(f"Analysis error: {str(e)}")
         db.rollback()
         raise
+
+
+@router.get("/{file_id}/download/{report_format}")
+async def download_report(
+    file_id: int,
+    report_format: str,
+    db: Session = Depends(get_db)
+):
+    """Download the generated report for a specific document."""
+    document = db.query(DocumentFile).filter(DocumentFile.id == file_id).first()
+    if not document:
+        raise DocumentNotFoundError(file_id)
+
+    analysis = (
+        db.query(DocumentAnalysis)
+        .filter(DocumentAnalysis.document_id == file_id)
+        .order_by(DocumentAnalysis.analyzed_at.desc())
+        .first()
+    )
+
+    if not analysis:
+        raise AnalysisNotFoundError(file_id)
+
+    report_format = report_format.lower()
+    if report_format not in {"markdown", "pdf", "docx"}:
+        raise HTTPException(status_code=400, detail="Invalid report format")
+
+    report_path = ReportService.create_report_file(document, analysis, report_format)
+    media_types = {
+        "markdown": "text/markdown",
+        "pdf": "application/pdf",
+        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }
+
+    return FileResponse(
+        path=report_path,
+        filename=f"relatorio_{document.id}.{report_format}",
+        media_type=media_types[report_format],
+        background=BackgroundTask(lambda: os.remove(report_path))
+    )
 
 
 @router.get("/{file_id}", response_model=DocumentWithAnalysisResponse)

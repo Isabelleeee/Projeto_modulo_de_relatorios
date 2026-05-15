@@ -19,6 +19,35 @@ def health_check():
     }
 
 
+@router.get("/health/live")
+def liveness_check():
+    """
+    Liveness probe for container orchestration.
+    """
+    return {
+        "status": "alive",
+        "message": "Service process is up"
+    }
+
+
+@router.get("/health/ready")
+def readiness_check(db: Session = Depends(get_db)):
+    """
+    Readiness probe to verify database connectivity.
+    """
+    try:
+        db.execute("SELECT 1")
+        return {
+            "status": "ready",
+            "message": "Service is ready to receive traffic"
+        }
+    except Exception as e:
+        return {
+            "status": "not ready",
+            "message": f"Database connection failure: {str(e)}"
+        }
+
+
 @router.get("/health/db")
 def health_check_db(db: Session = Depends(get_db)):
     """

@@ -95,42 +95,15 @@ az webapp config appsettings set \
 
 #### Option A: Using GitHub Actions
 
-1. Create `.github/workflows/deploy.yml`:
-```yaml
-name: Deploy to Azure
+This repository already includes a GitHub Actions workflow at `.github/workflows/main_projetoengsoftmodulorelatorios.yml` that builds the frontend, copies `dist/` into `static/`, installs Python dependencies, and deploys the app to Azure Web App.
 
-on:
-  push:
-    branches: [ main ]
+1. Ensure the following GitHub Secrets are configured:
+   - `AZURE_CREDENTIALS`: JSON service principal credentials for Azure login
+   - `AZURE_WEBAPP_NAME`: name of the target Azure App Service
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      
-      - name: Build and push to ACR
-        run: |
-          az acr build --registry ${{ secrets.REGISTRY_NAME }} \
-            --image ${{ secrets.APP_NAME }}:latest .
-      
-      - name: Deploy to App Service
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ secrets.APP_NAME }}
-          images: ${{ secrets.REGISTRY_URL }}/${{ secrets.APP_NAME }}:latest
-```
+2. Deploy by pushing to the `main` branch or triggering the workflow manually from the Actions tab.
 
-2. Add GitHub Secrets:
-   - `AZURE_CREDENTIALS`: Service principal credentials
-   - `REGISTRY_NAME`: Azure Container Registry name
-   - `REGISTRY_URL`: Registry URL
-   - `APP_NAME`: Web app name
+> The workflow uses `azure/login@v2` and `azure/webapps-deploy@v3`.
 
 #### Option B: Using Azure DevOps
 

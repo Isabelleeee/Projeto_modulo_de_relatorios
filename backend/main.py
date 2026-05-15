@@ -5,8 +5,11 @@ FastAPI backend for document analysis using Groq AI.
 """
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from datetime import datetime
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 from config import settings
@@ -41,7 +44,10 @@ app = FastAPI(
     title=settings.API_TITLE,
     description=settings.API_DESCRIPTION,
     version=settings.API_VERSION,
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
 
 # Add CORS middleware
@@ -56,6 +62,21 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router)
 app.include_router(documents.router)
+
+# Serve built frontend from the static directory when present
+app.mount("/", StaticFiles(directory="static", html=True, check_dir=False), name="static")
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception: %s", exc)
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error. Please check logs for more details."}
+    )
 
 logger.info(f"Application initialized - API v{settings.API_VERSION}")
 
