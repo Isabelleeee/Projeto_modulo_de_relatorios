@@ -10,21 +10,18 @@
 
 ---
 
-## 👥 Contribuições e Responsabilidades
+### 👥 Colaboradores
 
-O projeto foi desenvolvido em regime de colaboração técnica, dividindo as frentes de atuação:
+Este projeto foi desenvolvido sob um modelo de responsabilidade técnica compartilhada. Ambos os membros atuaram ativamente em todas as etapas do ciclo de desenvolvimento do software, incluindo:
 
-### 👩‍💻 Isabelle (Pessoa A) — Frontend & UX Lead
-- **Interface Reativa:** Desenvolvimento do Dashboard utilizando React e Tailwind CSS.
-- **Experiência do Usuário (UX):** Implementação de animações de interface e estados dinâmicos com Framer Motion.
-- **Integração de Consumo:** Conexão do cliente com as rotas do servidor e tratamento de dados recebidos da IA.
-- **Documentação Técnica:** Organização do fluxo de trabalho e estruturação visual do repositório.
+* **Arquitetura e Design de Software:** Definição estrutural baseada em Clean Architecture e modularização dos componentes do sistema.
+* **Desenvolvimento Full-Stack:** Implementação lógica, construção do sistema e integração com APIs externas.
+* **Qualidade e Manutenção:** *Troubleshooting* contínuo, revisão mútua de código (*code review*) e elaboração de documentação e diagramas técnicos.
 
-### 👨‍💻 Lucas (Pessoa B) — Backend & AI Engineer
-- **Arquitetura de Servidor:** Construção da API utilizando FastAPI com gestão de rotas síncronas.
-- **Engenharia de Prompt:** Integração e ajuste fino do modelo Llama 3.1 via Groq Cloud.
-- **Processamento de Dados:** Desenvolvimento do motor de extração de texto (PyPDF) e geração de PDFs (FPDF2).
-- **Segurança & DevOps:** Configuração de variáveis de ambiente (.env) e segurança de credenciais locais.
+---
+
+* **Isabelle Costa** – Engenharia de Software & Desenvolvimento End-to-End
+* **Lucas Oliveira** – Engenharia de Software & Desenvolvimento End-to-End
 
 ---
 
