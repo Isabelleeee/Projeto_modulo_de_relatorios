@@ -4,11 +4,10 @@ import {
   BarChart3, FileType, Link as LinkIcon, X, Check, Zap, Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 
 export default function ReportDetail() {
   const navigate = useNavigate();
-  const { id } = useParams();
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"pdf" | "docx" | "link">("pdf");
   const [isExporting, setIsExporting] = useState(false);
@@ -225,7 +224,7 @@ export default function ReportDetail() {
                 ].map((item) => (
                   <button 
                     key={item.id}
-                    onClick={() => setExportFormat(item.id as any)}
+                    onClick={() => setExportFormat(item.id as "pdf" | "docx" | "link")}
                     className={`w-full flex items-center gap-5 p-5 rounded-[1.5rem] border transition-all duration-300 group ${
                       exportFormat === item.id 
                         ? "border-cyan-500/50 bg-cyan-950/30 shadow-[0_0_20px_rgba(34,211,238,0.1)]" 

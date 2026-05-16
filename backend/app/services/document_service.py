@@ -8,8 +8,7 @@ from typing import Tuple
 from fastapi import UploadFile
 from pypdf import PdfReader
 from backend.config import settings
-from backend.utils.errors import FileUploadError
-from backend.utils.validators import validate_file_upload, validate_file_size, get_file_extension
+from backend.utils import FileUploadError, validate_file_upload, validate_file_size, get_file_extension
 
 logger = logging.getLogger(__name__)
 

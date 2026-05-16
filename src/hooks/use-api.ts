@@ -2,11 +2,11 @@
  * Custom hooks for API calls with loading states and error handling
  */
 import { useState, useCallback } from 'react';
-import { ApiError } from '../services/api-client';
-import { documentService } from '../services/document-service';
-import type { UseApiState, UseApiReturn } from '../types/api';
+import { ApiError } from '../lib/api-client';
+import { documentService } from '../features/documents';
+import type { UseApiReturn } from '../types/api';
 
-export function useApi<T = any>(): UseApiReturn<T> {
+export function useApi<T = Record<string, unknown>>(): UseApiReturn<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

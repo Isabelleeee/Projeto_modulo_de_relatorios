@@ -1,7 +1,5 @@
-"""
-Utils compatibility wrapper.
-"""
-from backend.app.utils.errors import (
+"""Backend app utils package."""
+from .errors import (
     DocumentNotFoundError,
     AnalysisNotFoundError,
     InvalidFileFormatError,
@@ -11,7 +9,7 @@ from backend.app.utils.errors import (
     AIServiceError,
     DatabaseError,
 )
-from backend.app.utils.validators import validate_file_upload, validate_file_size, get_file_extension
+from .validators import validate_file_upload, validate_file_size, get_file_extension
 
 __all__ = [
     "DocumentNotFoundError",

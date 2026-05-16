@@ -1,6 +1,6 @@
 """
-Routes package.
+Routes compatibility wrapper.
 """
-from . import documents, health
+from backend.app.routes import documents, health
 
 __all__ = ["documents", "health"]

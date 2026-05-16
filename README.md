@@ -41,33 +41,46 @@ O projeto foi desenvolvido em regime de colaboração técnica, dividindo as fre
 
 ## ⚙️ Como Rodar o Projeto
 
-### 1. Preparação (Python)
+### 1. Preparação do Back-end
 ```bash
-### Preparação Back-end
 cd backend
 python -m pip install -r requirements.txt
-
-### Importante: Crie um arquivo .env na pasta backend com a sua chave:
-
-GROQ_API_KEY=gsk_sua_chave_aqui
-
-### Ligar o Servidor:
-python -m uvicorn main:app --reload 
 ```
 
-### 2. Preparação do Front-end (React)
+### 2. Configurar variáveis de ambiente
+Copie `.env.example` para `.env` e preencha os valores:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+DATABASE_URL=sqlite:///./project_analysis.db
+LOG_LEVEL=INFO
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+```
+
+### 3. Iniciar o servidor Back-end
+A partir da pasta `backend`:
+```bash
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+A partir da raiz do projeto:
+```bash
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 4. Preparação do Front-end (React)
 Em um novo terminal:
 ```bash
 npm install
 npm run dev
 ```
 
-### 3. Deploy Local com Docker
+### 5. Deploy Local com Docker
 ```bash
 docker compose up --build
 ```
 
-### 4. Azure
+### 6. Azure
 Para deploy em Azure, use o workflow localizado em `.github/workflows/main_projetoengsoftmodulorelatorios.yml` e consulte `AZURE_DEPLOYMENT.md`.
 
 #### Secrets do GitHub necessários

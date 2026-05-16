@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
 import { UploadCloud, FileText, CheckCircle2, ChevronRight, Activity, Sparkles, Zap, FileDown, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useUploadAndAnalyze } from "../../hooks/use-api";
-import { documentService } from "../../services/document-service";
+import { useUploadAndAnalyze } from "../../hooks";
+import { documentService } from "../../features/documents";
 import type { AnalysisResponse } from "../../types/api";
 
 export default function Home() {
