@@ -60,7 +60,7 @@ export interface ApiErrorResponse {
   message?: string;
 }
 
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = Record<string, unknown>> {
   success: true;
   data: T;
   message?: string;
@@ -111,6 +111,6 @@ export interface UseApiState<T> {
 }
 
 export interface UseApiReturn<T> extends UseApiState<T> {
-  execute: (...args: any[]) => Promise<T>;
+  execute: (...args: unknown[]) => Promise<T>;
   reset: () => void;
 }

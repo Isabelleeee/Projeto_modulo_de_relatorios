@@ -1,15 +1,13 @@
 /**
  * Document service - handles all document-related API calls
  */
-import { apiClient } from './api-client';
+import { apiClient } from '../../lib/api-client';
 import type {
-  DocumentFile,
-  DocumentAnalysis,
   DocumentWithAnalysis,
   FileUploadResponse,
   AnalysisResponse,
   AnalysisListResponse,
-} from '../types/api';
+} from '../../types/api';
 
 export class DocumentService {
   /**

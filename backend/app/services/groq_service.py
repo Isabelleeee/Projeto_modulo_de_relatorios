@@ -6,7 +6,7 @@ import time
 from typing import Optional, List
 from groq import Groq
 from backend.config import settings
-from backend.utils.errors import AIServiceError, AnalysisProcessingError
+from backend.utils import AIServiceError, AnalysisProcessingError
 
 logger = logging.getLogger(__name__)
 

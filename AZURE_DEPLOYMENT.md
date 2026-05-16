@@ -67,15 +67,10 @@ az appservice plan create --name $APP_NAME-plan \
 az webapp create --resource-group $RESOURCE_GROUP \
   --plan $APP_NAME-plan \
   --name $APP_NAME \
-  --deployment-container-image-name-user $REGISTRY_NAME
-
-# Configure container
-az webapp config container set \
-  --name $APP_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --docker-custom-image-name $REGISTRY_NAME.azurecr.io/$APP_NAME:latest \
-  --docker-registry-server-url https://$REGISTRY_NAME.azurecr.io
+  --runtime "PYTHON|3.14"
 ```
+
+> Note: The included GitHub Actions workflow deploys the app by uploading the project package to Azure Web App. If you prefer container deployment, keep the registry and container configuration steps from the previous section instead.
 
 ### Step 4: Set Environment Variables
 

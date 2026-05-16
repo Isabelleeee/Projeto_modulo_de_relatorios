@@ -2,6 +2,7 @@
 node_modules/
 dist/
 dist-ssr/
+static/
 *.local
 
 # Logs e arquivos do Sistema
@@ -15,6 +16,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 venv/
+.venv/
+uploads/
 .env
 .env.local
 .pytest_cache/

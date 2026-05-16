@@ -3,8 +3,8 @@ Database migrations and setup utilities.
 """
 import logging
 from sqlalchemy import text
-from database import SessionLocal, engine, Base
-from models import DocumentFile, DocumentAnalysis, AnalysisRisk
+from backend.database import SessionLocal, engine, Base
+from backend.models import DocumentFile, DocumentAnalysis, AnalysisRisk
 
 logger = logging.getLogger(__name__)
 
