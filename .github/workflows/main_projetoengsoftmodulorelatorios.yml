@@ -29,11 +29,12 @@ jobs:
         with:
           node-version: '20'
 
-      # 🛠️ Local Build Section
+      # 🛠️ MUDANÇA 1: Aqui o Python vai instalar as bibliotecas na pasta ".venv"
+      # direto na raiz do seu projeto, para irem junto para a Azure!
       - name: Create and Start virtual environment and Install dependencies
         run: |
-          python -m venv $HOME/antenv
-          source $HOME/antenv/bin/activate
+          python -m venv .venv
+          source .venv/bin/activate
           pip install -r requirements.txt
 
       - name: Install frontend dependencies
@@ -49,7 +50,8 @@ jobs:
           mkdir -p static
           cp -R dist/* static/
 
-      # 🌟 O PULO DO GATO: Limpando a casa antes de empacotar!
+      # 🛠️ MUDANÇA 2: Aqui nós deletamos a "node_modules" pesada de 1GB, 
+      # mas a ".venv" levinha de 30MB fica salva para voar para a Azure!
       - name: Clean up development files
         run: |
           rm -rf node_modules
@@ -65,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      contents: read # Reduzido apenas para leitura do repositório
+      contents: read
 
     steps:
       - name: Download artifact from build job
@@ -73,13 +75,11 @@ jobs:
         with:
           name: python-app
 
-      # 🔄 O passo "Login to Azure" foi removido daqui porque o Perfil de Publicação faz a autenticação direto no passo abaixo!
-
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }} # 🌟 Chave adicionada para usar o token estudantil
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           slot-name: 'Production'
           package: '.'
