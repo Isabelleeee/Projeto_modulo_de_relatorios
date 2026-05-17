@@ -49,6 +49,12 @@ jobs:
           mkdir -p static
           cp -R dist/* static/
 
+      # 🌟 O PULO DO GATO: Limpando a casa antes de empacotar!
+      - name: Clean up development files
+        run: |
+          rm -rf node_modules
+          rm -rf dist
+
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
@@ -59,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      contents: read # Reduzido apenas para leitura do repositório, já que não precisamos mais gerar JWT para o login OIDC
+      contents: read # Reduzido apenas para leitura do repositório
 
     steps:
       - name: Download artifact from build job
