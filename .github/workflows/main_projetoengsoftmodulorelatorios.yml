@@ -41,6 +41,8 @@ jobs:
           npm ci
 
       - name: Build frontend assets
+        env:
+          VITE_API_URL: https://moduloderelatorios.azurewebsites.net
         run: |
           npm run build
 
